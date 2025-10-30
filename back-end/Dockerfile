@@ -2,7 +2,7 @@
 
 # ETAP 1: Budowanie i testy jednostkowe
 
-FROM python:3.12-slim AS build
+FROM python:3.12-slim
 # Używa lekkiego oficjalnego obrazu Pythona w wersji 3.12.
 # Służy do zainstalowania zależności i uruchomienia testów.
 
@@ -39,7 +39,7 @@ ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
 # Użytownik musi podac dane srodowiskowe przez plik .env lub flagę --env-file
 
 # Otwórz port 8000 — to informacja dla Dockera, że aplikacja nasłuchuje na tym porcie.
-EXPOSE 8000
+EXPOSE 8080
 
 # Uruchamia aplikację. Ten plik (app.py) startuje backend.
 # W przyszłosci linijka do zmiany przy rozbudowie np. serwerze
