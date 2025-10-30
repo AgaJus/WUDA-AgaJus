@@ -1,6 +1,6 @@
 # ADD YOUR OWN DOCKERFILE
 
-# ETAP 1: Budowanie i testy jednostkowe
+# ETAP 1: Budowanie
 
 FROM python:3.12-slim
 # Używa lekkiego oficjalnego obrazu Pythona w wersji 3.12.
@@ -17,7 +17,6 @@ COPY requirements.txt requirements_test.txt* ./
 # Instaluje wszystkie wymagane biblioteki.
 # --no-cache-dir = nie zapisuj tymczasowych plików (mniejszy obraz)
 # Instaluje także pakiety testowe, jeśli są w drugim pliku.
-# RUN pip install --no-cache-dir -r requirements.txt -r requirements_test.txt - stara wersja, niestabilna bo nie aktualizuje danych i w wyapdku ich braku może powodować problemy
 RUN python -m pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt && \
     if [ -f "requirements_test.txt" ]; then pip install --no-cache-dir -r requirements_test.txt; fi
@@ -25,11 +24,6 @@ RUN python -m pip install --upgrade pip && \
 
 # Kopiuje cały kod projektu do obrazu (app.py, database.py, itp.).
 COPY . .
-
-# Uruchamia testy jednostkowe, jeśli są.
-# Jeśli testy się wykonają - przechodzi do bildu pełnego, jeśli nie, daje błąd i zatrzymuje budowę.
-
-# Testy przeniesione do głownego backend.yml
 
 # ETAP 2: Uruchomienie aplikacji
 

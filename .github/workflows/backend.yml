@@ -17,27 +17,26 @@ jobs:
         uses: actions/checkout@v4
 
       # Budowanie obrazu backendu z folderu /back-end
-      # Testy są w Dockerfile, uruchomią się automatycznie w tym kroku
+
+      # budują obrazy dockerowe (tak), przeprowadzają testy jednostkowe aplikacji (tak)
+      # tu trzeba dopasować sleep (na razie jest git)
       - name: Build and start services
         run: |
           docker compose up -d --build
           echo "Czekam aż backend i baza wystartują..."
           sleep 15
-        # tu trzeba dopasować
 
       - name: Unit tests inside container
         run: docker compose run --rm backend pytest -ra
 
-        #sprawdza echa czy wszytko stoi
+      #sprawdza echa czy wszytko stoi
+      # TODO: Mechanizm sprawdzający czy otrzymane wiaodmośći są poprawne
       - name: Test liveness/readiness endpoints
         run: |
           echo "Testuję endpoint /liveness"
           curl -f http://localhost:8080/liveness
           echo "Testuję endpoint /readiness"
           curl -f http://localhost:8080/readiness
-
-      # TODO: budują obrazy dockerowe (tak), przeprowadzają testy jednostkowe aplikacji (?)
-      # Przenieść testy z Docerfile tutaj?
 
       # TODO: jeżeli testy zostaną wykonane pomyślnie to potok wrzuca obrazy dockerowe do rejestru githubowego (może też być dockerhub).
 
