@@ -1,6 +1,6 @@
 # ADD YOUR OWN DOCKERFILE
 
-# ETAP 1: Budowanie i testy
+# ETAP 1: Budowanie i testy jednostkowe
 
 FROM python:3.12-slim AS build
 # Używa lekkiego oficjalnego obrazu Pythona w wersji 3.12.
@@ -12,7 +12,7 @@ WORKDIR /app
 
 # KOpiuje pliki z listą zależności do obrazu.
 # Dzięki temu Docker użyje cache, jeśli requirements się nie zmieniły.
-COPY requirements.txt requirements_test.txt ./
+COPY requirements.txt requirements_test.txt* ./
 
 # Instaluje wszystkie wymagane biblioteki.
 # --no-cache-dir = nie zapisuj tymczasowych plików (mniejszy obraz)
@@ -30,4 +30,18 @@ COPY . .
 # Jeśli testy się wykonają - przechodzi do bildu pełnego, jeśli nie, daje błąd i zatrzymuje budowę.
 RUN echo "Uruchamianie testów jednostkowych..." && \
     pytest -q || (echo "Testy nie przeszły — build przerwany. Sprawdź wyniki testów w logach powyżej." >&2 && exit 1)
+
+# ETAP 2: Uruchomienie aplikacji
+
+# Uruchamiamy buforowanie logów, żeby były widoczne od razu w konsoli. Zapobiega generowaniu plików .pyc w obrazie
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
+
+# Użytownik musi podac dane srodowiskowe przez plik .env lub flagę --env-file
+
+# Otwórz port 8000 — to informacja dla Dockera, że aplikacja nasłuchuje na tym porcie.
+EXPOSE 8000
+
+# Uruchamia aplikację. Ten plik (app.py) startuje backend.
+# W przyszłosci linijka do zmiany przy rozbudowie np. serwerze
+CMD ["python", "app.py"]
 
