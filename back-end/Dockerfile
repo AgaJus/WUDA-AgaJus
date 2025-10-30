@@ -30,8 +30,6 @@ COPY . .
 # Jeśli testy się wykonają - przechodzi do bildu pełnego, jeśli nie, daje błąd i zatrzymuje budowę.
 
 # Testy przeniesione do głownego backend.yml
-#RUN echo "Uruchamianie testów jednostkowych..." && \
-#    pytest -q || (echo "Testy nie przeszły — build przerwany. Sprawdź wyniki testów w logach powyżej." >&2 && exit 1)
 
 # ETAP 2: Uruchomienie aplikacji
 
