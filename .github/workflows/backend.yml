@@ -20,10 +20,13 @@ jobs:
       # Testy są w Dockerfile, uruchomią się automatycznie w tym kroku
       - name: Build and start services
         run: |
-          docker compose -f docker-compose.yaml up -d --build
+          docker compose up -d --build
           echo "Czekam aż backend i baza wystartują..."
           sleep 15
         # tu trzeba dopasować
+
+      - name: Unit tests inside container
+        run: docker compose run --rm backend pytest -ra
 
         #sprawdza echa czy wszytko stoi
       - name: Test liveness/readiness endpoints
