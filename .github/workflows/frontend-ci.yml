@@ -18,11 +18,14 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      # Zudowanie i uruchamienie frontendu w Dockerze
-      # (teksty podobne do backendu żeby było wszystko jasne co się dzieje we froncie)
+      # Budowanie obrazu Dockera dla frontendu
+      - name: Build Docker image for frontend
+        run: docker build -t frontend:latest ./front-end
+
+      # Uruchomienie frontendu w kontenerze
       - name: Build and start frontend service
         run: |
-          docker compose -f docker-compose.yaml up -d --build frontend
+          docker compose -f docker-compose.yaml up -d frontend
           echo "Czekam aż frontend wystartuje..."
           sleep 10
 
@@ -37,16 +40,16 @@ jobs:
           echo "Testuję endpoint frontendu"
           curl -f http://localhost:8000 || exit 1
 
-      # Jeżeli będzie wszystko git to wrzuci obraz do GHCR
+      # Jeżeli będzie wszystko poprawnie to wrzuca obraz do GHCR
       - name: Log in to GitHub Container Registry
         run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin
 
       - name: Push Docker image to GHCR
         run: |
-          docker tag frontend ghcr.io/${{ secrets.GHCR_USERNAME }}/frontend:latest
+          docker tag frontend:latest ghcr.io/${{ secrets.GHCR_USERNAME }}/frontend:latest
           docker push ghcr.io/${{ secrets.GHCR_USERNAME }}/frontend:latest
 
-      # Sprzątanie
+      # Sprzątanie po zakończeniu działania
       - name: Stop and clean up
         if: always()
         run: docker compose down -v
