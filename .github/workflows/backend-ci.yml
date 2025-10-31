@@ -51,11 +51,10 @@ jobs:
           bandit -r . -lll
 
       # -r ma za zadanie czytania pliku z listą zależności
-      # || true pozwala przejść dalej nawet, jeśli pip-audit znajdzie błędy ( czyli prościej -> nie przerywa pipeline’u)
       - name: Check dependencies vulnerabilities with pip-audit
         run: |
           echo "Sprawdzam zależności z requirements.txt..."
-          pip-audit -r back-end/requirements.txt || true
+          pip-audit -r back-end/requirements.txt
 
       # Budowanie obrazu backendu z folderu /back-end
 
