@@ -20,6 +20,39 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      # Analiza jakości i bezpieczeństwa kodu
+      - name: Install lint & security tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 bandit safety
+
+      # w kolejności co robi co:
+      # liczba błędów na końcu
+      # ignorowanie błędów zbyt długich linii (>79 znaków)
+      # maksymalna złożoność funkcji to 10
+      # dozwolona długość linii to 120 znaków
+      # pokazuje się fragment kodu, w którym jest błąd
+      # na końcu wyświetlane statystyki błędów
+      - name: Lint code with Flake8
+        run: |
+          echo "Sprawdzam styl i błędy składniowe w backu..."
+          cd back-end
+          flake8 . --count --ignore=E501 --max-complexity=10 --max-line-length=120 --show-source --statistics || true
+
+      # bandit analizuje rekurencyjnie (-r .) a -lll pokazuje tylko błędy o najwyższym poziomie ryzyka
+      - name: Run security checks with Bandit
+        run: |
+          echo "Analizuję kod pod kątem podatności..."
+          cd back-end
+          bandit -r . -lll
+
+      # -r ma za zadanie czytania pliku z listą zależności
+      # || true pozwala przejść dalej nawet, jeśli safety znajdzie błędy ( czyli prościej -> nie przerywa pipeline’u)
+      - name: Check dependencies vulnerabilities with Safety
+        run: |
+          echo "Sprawdzam zależności z requirements.txt..."
+          safety check -r back-end/requirements.txt || true
+
       # Budowanie obrazu backendu z folderu /back-end
 
       # budują obrazy dockerowe (tak), przeprowadzają testy jednostkowe aplikacji (tak)
@@ -51,7 +84,7 @@ jobs:
       - name: Push backend image to GHCR
         if: ${{ success() }}
         run: |
-          IMAGE_BASE="ghcr.io/${{ secrets.GHCR_USERNAME }}/backend"
+          IMAGE_BASE="ghcr.io/${{ github.repository }}/backend"
           GIT_SHA="${{ github.sha }}"
           docker tag backend:latest "${IMAGE_BASE}:latest"
           docker tag backend:latest "${IMAGE_BASE}:${GIT_SHA}"
