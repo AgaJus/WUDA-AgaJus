@@ -55,7 +55,7 @@ jobs:
       - name: Check dependencies vulnerabilities with Safety
         run: |
           echo "Sprawdzam zależności z requirements.txt..."
-          safety check -r back-end/requirements.txt || true
+          safety scan --file back-end/requirements.txt || true
 
       # Budowanie obrazu backendu z folderu /back-end
 
