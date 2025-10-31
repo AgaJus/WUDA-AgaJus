@@ -1,9 +1,4 @@
 name: backend-ci
-
-permissions:
-  contents: read
-  packages: write
-
 on:
   push:
     branches: [master]
@@ -79,53 +74,22 @@ jobs:
           echo "Testuję endpoint /readiness"
           curl -f http://localhost:8080/readiness
 
-      # Jeżeli testy zostaną wykonane pomyślnie to potok wrzuca obrazy dockerowe do rejestru githubowego (może też być dockerhub).
-
+      # Login do GHCR przy użyciu GITHUB_TOKEN
       - name: Log in to GitHub Container Registry
         if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "${{ github.token }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-      # ZdefiniuIntegracja tagów i labelki zgodnie z dokumentacją GHCR/OCI
-      - name: Docker metadata (tags & labels)
-        id: meta
+      # Push obrazu z wersjonowaniem i zachowaniem historii
+      - name: Push Docker image to GHCR
         if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository }}/backend
-          tags: |
-            type=raw,value=latest
-            type=sha
-          labels: |
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.description=Backend image for ${{ github.repository }}
-            org.opencontainers.image.licenses=MIT
-
-      # Build + Push (i zwrócenie digestu)
-      - name: Build and push backend image
-        id: build
-        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
-        uses: docker/build-push-action@v6
-        with:
-          context: ./back-end
-          file: ./back-end/Dockerfile
-          push: true
-          platforms: linux/amd64
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-
-      # Pokaż digest do użycia w pull @sha256:...
-      - name: Print image digest
-        if: steps.build.outputs.digest
         run: |
-          IMAGE_BASE="ghcr.io/${{ github.repository }}/backend"
-          IMAGE_BASE_LOWER=$(echo "$IMAGE_BASE" | tr '[:upper:]' '[:lower:]')
-          echo "Pushed digest: ${{ steps.build.outputs.digest }}"
-          echo "Exact pull command:"
-          echo "docker pull ${IMAGE_BASE_LOWER}@${{ steps.build.outputs.digest }}"
+          IMAGE_NAME=ghcr.io/${{ github.repository }}/backend
+          TAG=${{ github.sha }}
+          docker tag backend:latest $IMAGE_NAME:latest
+          docker tag backend:latest $IMAGE_NAME:$TAG
+          echo "Wysyłam obraz do GitHub Container Registry..."
+          docker push $IMAGE_NAME:latest
+          docker push $IMAGE_NAME:$TAG
 
       # sprzątanie
       - name: Stop and clean up
