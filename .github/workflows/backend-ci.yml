@@ -83,11 +83,11 @@ jobs:
       - name: Push Docker image to GHCR
         if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: |
-          IMAGE_NAME=ghcr.io/${{ github.repository }}/backend
+          IMAGE_NAME=ghcr.io/$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')/backend
           TAG=${{ github.sha }}
           docker tag backend:latest $IMAGE_NAME:latest
           docker tag backend:latest $IMAGE_NAME:$TAG
-          echo "Wysyłam obraz do GitHub Container Registry..."
+          echo "Pushing image to GitHub Container Registry..."
           docker push $IMAGE_NAME:latest
           docker push $IMAGE_NAME:$TAG
 
