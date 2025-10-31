@@ -88,11 +88,15 @@ jobs:
       - name: Push Docker image to GHCR
         if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: |
-          IMAGE_NAME=ghcr.io/${{ github.repository }}/backend:latest
-          IMAGE_NAME_LOWER=$(echo $IMAGE_NAME | tr '[:upper:]' '[:lower:]')
-          docker tag backend:latest $IMAGE_NAME_LOWER
-          echo "Wysyłam obraz do GitHub Container Registry..."
-          docker push $IMAGE_NAME_LOWER
+          IMAGE_BASE="ghcr.io/${{ github.repository }}/backend"
+          IMAGE_BASE_LOWER=$(echo "$IMAGE_BASE" | tr '[:upper:]' '[:lower:]')
+          GIT_SHA="${{ github.sha }}"
+
+          docker tag backend:latest "${IMAGE_BASE_LOWER}:latest"
+          docker tag backend:latest "${IMAGE_BASE_LOWER}:${GIT_SHA}"
+
+          docker push "${IMAGE_BASE_LOWER}:latest"
+          docker push "${IMAGE_BASE_LOWER}:${GIT_SHA}"
 
       # sprzątanie
       - name: Stop and clean up
