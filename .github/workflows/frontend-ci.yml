@@ -75,18 +75,22 @@ jobs:
           echo "Testuję endpoint frontendu"
           curl -f http://localhost:8000 || exit 1
 
-      # Jeżeli będzie wszystko poprawnie to wrzuca obraz do GHCR
+      # Login do GHCR przy użyciu GITHUB_TOKEN
       - name: Log in to GitHub Container Registry
-        run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin
+        run: echo "${{ github.token }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
+      # Push obrazu z wersjonowaniem i zachowaniem historii
       - name: Push Docker image to GHCR
         run: |
-          IMAGE_NAME=ghcr.io/agatarafalowicz/wuda-agajus/frontend:latest
-          docker tag frontend:latest $IMAGE_NAME
+          IMAGE_NAME=ghcr.io/${{ github.repository }}/frontend
+          TAG=${{ github.sha }}
+          docker tag frontend:latest $IMAGE_NAME:latest
+          docker tag frontend:latest $IMAGE_NAME:$TAG
           echo "Wysyłam obraz do GitHub Container Registry..."
-          docker push $IMAGE_NAME
+          docker push $IMAGE_NAME:latest
+          docker push $IMAGE_NAME:$TAG
 
-      # Sprzątanie po zakończeniu działania
-      - name: Stop and clean up
+      # kontenery nie są usuwane, tylko zatrzymane
+      - name: Stop containers
         if: always()
-        run: docker compose down -v
+        run: docker compose stop
