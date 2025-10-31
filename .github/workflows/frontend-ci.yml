@@ -82,13 +82,14 @@ jobs:
       # Push obrazu z wersjonowaniem i zachowaniem historii
       - name: Push Docker image to GHCR
         run: |
-          IMAGE_NAME=ghcr.io/${{ github.repository }}/frontend
+          IMAGE_NAME=ghcr.io/$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')/frontend
           TAG=${{ github.sha }}
           docker tag frontend:latest $IMAGE_NAME:latest
           docker tag frontend:latest $IMAGE_NAME:$TAG
-          echo "Wysyłam obraz do GitHub Container Registry..."
+          echo "Pushing image to GitHub Container Registry..."
           docker push $IMAGE_NAME:latest
           docker push $IMAGE_NAME:$TAG
+
 
       # kontenery nie są usuwane, tylko zatrzymane
       - name: Stop containers
