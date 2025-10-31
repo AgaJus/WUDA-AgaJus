@@ -3,7 +3,11 @@ name: backend-ci
 on:
   push:
     branches: [master]
+    paths:
+      - "back-end/**"
   pull_request:
+    paths:
+      - "back-end/**"
 
 jobs:
   build-and-test:
