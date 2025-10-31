@@ -81,15 +81,13 @@ jobs:
         if: ${{ success() }}
         run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin
 
-      - name: Push backend image to GHCR
-        if: ${{ success() }}
+      - name: Push Docker image to GHCR
         run: |
-          IMAGE_BASE="ghcr.io/${{ github.repository }}/backend"
-          GIT_SHA="${{ github.sha }}"
-          docker tag backend:latest "${IMAGE_BASE}:latest"
-          docker tag backend:latest "${IMAGE_BASE}:${GIT_SHA}"
-          docker push "${IMAGE_BASE}:latest"
-          docker push "${IMAGE_BASE}:${GIT_SHA}"
+          IMAGE_NAME=ghcr.io/${{ github.repository }}/backend:latest
+          IMAGE_NAME_LOWER=$(echo $IMAGE_NAME | tr '[:upper:]' '[:lower:]')
+          docker tag backend:latest $IMAGE_NAME_LOWER
+          echo "Wysyłam obraz do GitHub Container Registry..."
+          docker push $IMAGE_NAME_LOWER
 
       # sprzątanie
       - name: Stop and clean up
