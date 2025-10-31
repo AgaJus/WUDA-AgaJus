@@ -4,6 +4,7 @@ from pydantic import ValidationError
 from settings import SECRET_KEY, APP_PORT, APP_HOST
 import logging
 
+# sprawdzam działanie GitHub Actions dla frontendu 
 
 logging.basicConfig(
     level=logging.DEBUG,
