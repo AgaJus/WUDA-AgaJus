@@ -11,7 +11,7 @@ api = Api(app)
 app.config['JWT_SECRET_KEY'] = JWT_KEY
 jwt = JWTManager(app)
 
-# sprawdzam działanie GitHub Actions dla frontendu v2 (sprawdzenie czy będzie kontunacja pipeline'u)
+# sprawdzam działanie GitHub Actions dla frontendu v3 (sprawdzenie czy będzie kontunacja pipeline'u)
 
 init_db()
 
