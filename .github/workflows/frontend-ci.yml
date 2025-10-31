@@ -75,7 +75,6 @@ jobs:
           echo "Testuję endpoint frontendu"
           curl -f http://localhost:8000 || exit 1
 
-      # Login do GHCR przy użyciu GITHUB_TOKEN
       - name: Log in to GitHub Container Registry
         run: echo "${{ github.token }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
