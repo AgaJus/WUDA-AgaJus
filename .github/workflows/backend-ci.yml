@@ -1,5 +1,9 @@
 name: backend-ci
 
+permissions:
+  contents: read
+  packages: write
+
 on:
   push:
     branches: [master]
@@ -78,10 +82,11 @@ jobs:
       # Jeżeli testy zostaną wykonane pomyślnie to potok wrzuca obrazy dockerowe do rejestru githubowego (może też być dockerhub).
 
       - name: Log in to GitHub Container Registry
-        if: ${{ success() }}
+        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin
 
       - name: Push Docker image to GHCR
+        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: |
           IMAGE_NAME=ghcr.io/${{ github.repository }}/backend:latest
           IMAGE_NAME_LOWER=$(echo $IMAGE_NAME | tr '[:upper:]' '[:lower:]')
