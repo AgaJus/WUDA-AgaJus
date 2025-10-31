@@ -28,7 +28,7 @@ jobs:
       - name: Install lint & security tools
         run: |
           python -m pip install --upgrade pip
-          pip install flake8 bandit safety
+          pip install flake8 bandit pip-audit
 
       # w kolejności co robi co:
       # liczba błędów na końcu
@@ -51,11 +51,11 @@ jobs:
           bandit -r . -lll
 
       # -r ma za zadanie czytania pliku z listą zależności
-      # || true pozwala przejść dalej nawet, jeśli safety znajdzie błędy ( czyli prościej -> nie przerywa pipeline’u)
-      - name: Check dependencies vulnerabilities with Safety
+      # || true pozwala przejść dalej nawet, jeśli pip-audit znajdzie błędy ( czyli prościej -> nie przerywa pipeline’u)
+      - name: Check dependencies vulnerabilities with pip-audit
         run: |
           echo "Sprawdzam zależności z requirements.txt..."
-          safety scan --file back-end/requirements.txt || true
+          pip-audit -r back-end/requirements.txt || true
 
       # Budowanie obrazu backendu z folderu /back-end
 
