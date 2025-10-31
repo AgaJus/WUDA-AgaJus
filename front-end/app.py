@@ -4,7 +4,7 @@ from pydantic import ValidationError
 from settings import SECRET_KEY, APP_PORT, APP_HOST
 import logging
 
-# sprawdzam działanie GitHub Actions dla frontendu v7 (sprawdzenie pushowania obrazu do GHCR samego repozytorium)
+# sprawdzam działanie GitHub Actions dla frontendu v8 (sprawdzenie pushowania obrazu do GHCR samego repozytorium)
 
 logging.basicConfig(
     level=logging.DEBUG,
