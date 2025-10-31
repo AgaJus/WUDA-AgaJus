@@ -1,5 +1,9 @@
 name: frontend-ci
 
+permissions:
+  contents: read
+  packages: write
+
 on:
   push:
     branches: [master]
@@ -45,11 +49,12 @@ jobs:
           cd front-end
           bandit -r . -lll 
 
-      # || true pozwala przejść dalej nawet, jeśli safety znajdzie błędy ( czyli prościej -> nie przerywa pipeline’u)
-      - name: Check dependencies vulnerabilities with Safety
+      # -r ma za zadanie czytania pliku z listą zależności
+      # || true pozwala przejść dalej nawet, jeśli pip-audit znajdzie błędy ( czyli prościej -> nie przerywa pipeline’u)
+      - name: Check dependencies vulnerabilities with pip-audit
         run: |
           echo "Sprawdzam zależności z requirements.txt..."
-          safety scan --file front-end/requirements.txt || true
+          pip-audit -r back-end/requirements.txt || true
 
 
       # Budowanie obrazu Dockera dla frontendu
