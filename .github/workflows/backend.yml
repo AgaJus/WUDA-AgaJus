@@ -22,7 +22,7 @@ jobs:
       # tu trzeba dopasować sleep (na razie jest git)
       - name: Build and start services
         run: |
-          docker compose up -d --build
+          docker compose up -d --build backend db
           echo "Czekam aż backend i baza wystartują..."
           sleep 15
 
@@ -30,7 +30,7 @@ jobs:
         run: docker compose run --rm backend pytest -ra
 
       #sprawdza echa czy wszytko stoi
-      # TODO: Mechanizm sprawdzający czy otrzymane wiaodmośći są poprawne
+      # Mechanizm sprawdzający czy otrzymane wiaodmośći są poprawne (odpowiada za ot flaga -f)
       - name: Test liveness/readiness endpoints
         run: |
           echo "Testuję endpoint /liveness"
@@ -38,7 +38,21 @@ jobs:
           echo "Testuję endpoint /readiness"
           curl -f http://localhost:8080/readiness
 
-      # TODO: jeżeli testy zostaną wykonane pomyślnie to potok wrzuca obrazy dockerowe do rejestru githubowego (może też być dockerhub).
+      # Jeżeli testy zostaną wykonane pomyślnie to potok wrzuca obrazy dockerowe do rejestru githubowego (może też być dockerhub).
+
+      - name: Log in to GitHub Container Registry
+        if: ${{ success() }}
+        run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin
+
+      - name: Push backend image to GHCR
+        if: ${{ success() }}
+        run: |
+          IMAGE_BASE="ghcr.io/${{ secrets.GHCR_USERNAME }}/backend"
+          GIT_SHA="${{ github.sha }}"
+          docker tag backend:latest "${IMAGE_BASE}:latest"
+          docker tag backend:latest "${IMAGE_BASE}:${GIT_SHA}"
+          docker push "${IMAGE_BASE}:latest"
+          docker push "${IMAGE_BASE}:${GIT_SHA}"
 
       # sprzątanie
       - name: Stop and clean up
