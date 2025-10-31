@@ -81,11 +81,10 @@ jobs:
 
       - name: Push Docker image to GHCR
         run: |
-          IMAGE_NAME=ghcr.io/${{ github.repository }}/frontend:latest
-          IMAGE_NAME_LOWER=$(echo $IMAGE_NAME | tr '[:upper:]' '[:lower:]')
-          docker tag frontend:latest $IMAGE_NAME_LOWER
+          IMAGE_NAME=ghcr.io/agatarafalowicz/wuda-agajus/frontend:latest
+          docker tag frontend:latest $IMAGE_NAME
           echo "Wysyłam obraz do GitHub Container Registry..."
-          docker push $IMAGE_NAME_LOWER
+          docker push $IMAGE_NAME
 
       # Sprzątanie po zakończeniu działania
       - name: Stop and clean up
