@@ -37,4 +37,4 @@ api.add_resource(Readiness, "/readiness")
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host=APP_HOST, port=APP_PORT)
+    app.run(debug=False, host=APP_HOST, port=APP_PORT)
