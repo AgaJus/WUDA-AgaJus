@@ -35,13 +35,8 @@ jobs:
         run: |
           echo "Sprawdzam styl i błędy składniowe we froncie..."
           cd front-end
-          flake8 . \                       
-            --count \                      
-            --ignore=E501 \                 
-            --max-complexity=10 \           
-            --max-line-length=120 \         
-            --show-source \                
-            --statistics || true              
+          flake8 . --count --ignore=E501 --max-complexity=10 --max-line-length=120 --show-source --statistics || true
+            
 
       # bandit analizuje rekurencyjnie (-r .) a -lll pokazuje tylko błędy o najwyższym poziomie ryzyka
       - name: Run security checks with Bandit 
