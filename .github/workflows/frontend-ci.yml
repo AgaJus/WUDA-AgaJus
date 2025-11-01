@@ -53,9 +53,9 @@ jobs:
       - name: Check dependencies vulnerabilities with pip-audit
         run: |
           echo "Sprawdzam zależności z requirements.txt..."
-          pip-audit -r back-end/requirements.txt || true
+          pip-audit -r front-end/requirements.txt || true
 
-      # Budowanie obrazu backendu z folderu /front-end
+      # Budowanie obrazu frontendu z folderu /front-end
       - name: Build and start services
         run: |
           docker compose up -d --build frontend
