@@ -118,6 +118,7 @@ Co zrobiono w naszym potoku:
 
 
    Jak to wygląda schematycznie (czyli jak uruchomimy pipeline i znajdziemy/nie znajdziemy błędu):
+   ```
 
      Uruchomienie pipeline
                |
@@ -140,6 +141,7 @@ Co zrobiono w naszym potoku:
 
    Powiadomienie
    o błędzie
+   ```
    
    Jak to wygląda schematycznie, jeśli nie został znaleziony żaden błąd:
 
