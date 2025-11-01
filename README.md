@@ -140,10 +140,11 @@ Co zrobiono w naszym potoku:
 
    Powiadomienie
    o błędzie
-
+   
    Jak to wygląda schematycznie, jeśli nie został znaleziony żaden błąd:
 
-     Zmiana kodu na GitHub
+```
+   Zmiana kodu na GitHub
                |
                |
    ------------------------
@@ -168,3 +169,4 @@ Obraz Dockerowy   Obraz Dockerowy
         Możliwe wdrożenie
    
 
+```
