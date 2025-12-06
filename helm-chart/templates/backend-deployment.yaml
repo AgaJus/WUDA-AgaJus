@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "wuda-app.fullname" . }}-backend
+  namespace: {{ .Values.namespace | default "default" }}
+  labels:
+    {{- include "wuda-app.labels" . | nindent 4 }}
+    component: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "wuda-app.selectorLabels" . | nindent 6 }}
+      component: backend
+  template:
+    metadata:
+      labels:
+        {{- include "wuda-app.selectorLabels" . | nindent 8 }}
+        component: backend
+    spec:
+      containers:
+      - name: backend
+        image: {{ .Values.backend.image | default "backend:latest" }}
+        imagePullPolicy: Never
+        ports:
+        - containerPort: {{ .Values.backend.port | default 8080 }}
+        env:
+        - name: POSTGRES_HOST
+          value: {{ include "wuda-app.fullname" . }}-postgres
+        - name: POSTGRES_PORT
+          value: "5432"
+        - name: POSTGRES_DB
+          value: {{ .Values.postgres.database | default "games" }}
+        - name: POSTGRES_USER
+          value: {{ .Values.postgres.user | default "board_games" }}
+        - name: POSTGRES_PASSWORD
+          value: {{ .Values.postgres.password | default "alamakota" }}
+        - name: APP_HOST
+          value: "0.0.0.0"
+        - name: APP_PORT
+          value: {{ .Values.backend.port | default "8080" | quote }}
+        - name: JWT_KEY
+          value: {{ .Values.backend.jwtKey | default "dev-secret" }}
+        livenessProbe:
+          httpGet:
+            path: /liveness
+            port: {{ .Values.backend.port | default 8080 }}
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 5
+        readinessProbe:
+          httpGet:
+            path: /readiness
+            port: {{ .Values.backend.port | default 8080 }}
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 10
+          failureThreshold: 5
+
+

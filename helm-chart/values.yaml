@@ -1,0 +1,18 @@
+# Values file - będzie wypełniony przez inną osobę
+# To jest tylko struktura podstawowa
+
+postgres:
+  image: postgres:15 
+  database: games
+  user: board_games
+  password: alamakota
+
+backend:
+  image: backend:latest
+  port: 8080
+
+frontend:
+  image: frontend:latest
+  port: 8000
+  nodePort: 30080  # Port NodePort dla dostępu z przeglądarki
+
