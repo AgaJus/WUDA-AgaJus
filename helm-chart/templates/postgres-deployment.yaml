@@ -4,55 +4,55 @@ metadata:
   name: {{ include "wuda-app.fullname" . }}-postgres
   namespace: {{ .Values.namespace }}
   labels:
+    {{- include "wuda-app.labels" . | nindent 4 }}
     app.kubernetes.io/name: {{ include "wuda-app.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     component: postgres
-
 spec:
   replicas: {{ .Values.postgres.replicas }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "wuda-app.name" . }}
-      app.kubernetes.io/instance: {{ .Release.Name }}
+      {{- include "wuda-app.selectorLabels" . | nindent 6 }}
       component: postgres
-
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: {{ include "wuda-app.name" . }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
+        {{- include "wuda-app.selectorLabels" . | nindent 8 }}
         component: postgres
-
     spec:
       containers:
         - name: postgres
+          # Obraz w całości sterowany z values
           image: {{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag }}
+          imagePullPolicy: {{ .Values.postgres.image.pullPolicy | default "IfNotPresent" }}
 
           ports:
+            # Port kontenera sterowany z values
             - containerPort: {{ .Values.postgres.service.port }}
 
           env:
-            - name: POSTGRES_DB
-              value: {{ .Values.postgres.env.POSTGRES_DB }}
-            - name: POSTGRES_USER
-              value: {{ .Values.postgres.env.POSTGRES_USER }}
-            - name: POSTGRES_PASSWORD
-              value: {{ .Values.postgres.env.POSTGRES_PASSWORD }}
+          # Dynamiczne wczytywanie wszystkich zmiennych z .Values.postgres.env
+          {{- range $key, $value := .Values.postgres.env }}
+          - name: {{ $key }}
+            value: {{ $value | quote }}
+          {{- end }}
 
           volumeMounts:
+            # Mount path sterowany z values
             - name: postgres-storage
               mountPath: {{ .Values.postgres.persistence.mountPath }}
 
+          # Probes (gotowość i żywotność) sterowane z values
           livenessProbe:
             exec:
               command:
                 - /bin/sh
                 - -c
                 - pg_isready -U $(POSTGRES_USER) -d $(POSTGRES_DB)
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 3
+            initialDelaySeconds: {{ .Values.postgres.probes.liveness.initialDelaySeconds | default 30 }}
+            periodSeconds: {{ .Values.postgres.probes.liveness.periodSeconds | default 10 }}
+            timeoutSeconds: {{ .Values.postgres.probes.liveness.timeoutSeconds | default 5 }}
+            failureThreshold: {{ .Values.postgres.probes.liveness.failureThreshold | default 3 }}
 
           readinessProbe:
             exec:
@@ -60,11 +60,16 @@ spec:
                 - /bin/sh
                 - -c
                 - pg_isready -U $(POSTGRES_USER) -d $(POSTGRES_DB)
-            initialDelaySeconds: 5
-            periodSeconds: 5
-            timeoutSeconds: 3
-            failureThreshold: 3
+            initialDelaySeconds: {{ .Values.postgres.probes.readiness.initialDelaySeconds | default 5 }}
+            periodSeconds: {{ .Values.postgres.probes.readiness.periodSeconds | default 5 }}
+            timeoutSeconds: {{ .Values.postgres.probes.readiness.timeoutSeconds | default 3 }}
+            failureThreshold: {{ .Values.postgres.probes.readiness.failureThreshold | default 3 }}
 
       volumes:
         - name: postgres-storage
+          {{- if .Values.postgres.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "wuda-app.fullname" . }}-postgres
+          {{- else }}
           emptyDir: {}
+          {{- end }}

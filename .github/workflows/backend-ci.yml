@@ -62,7 +62,7 @@ jobs:
       # tu trzeba dopasować sleep (na razie jest git)
       - name: Build and start services
         run: |
-          docker compose up -d --build backend
+          docker compose up -d --build backend postgres
           echo "Czekam aż backend i baza wystartują..."
           sleep 15
 

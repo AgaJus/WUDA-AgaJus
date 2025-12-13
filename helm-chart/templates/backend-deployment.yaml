@@ -24,6 +24,10 @@ spec:
         component: backend
 
     spec:
+      {{- if .Values.backend.initContainers }}
+      initContainers:
+        {{- toYaml .Values.backend.initContainers | nindent 8 }}
+      {{- end }}
       containers:
         - name: backend
           image: {{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}
@@ -33,22 +37,11 @@ spec:
             - containerPort: {{ .Values.backend.containerPort }}
 
           env:
-            - name: POSTGRES_HOST
-              value: {{ .Values.backend.env.POSTGRES_HOST }}
-            - name: POSTGRES_PORT
-              value: "{{ .Values.backend.env.POSTGRES_PORT }}"
-            - name: POSTGRES_DB
-              value: {{ .Values.backend.env.POSTGRES_DB }}
-            - name: POSTGRES_USER
-              value: {{ .Values.backend.env.POSTGRES_USER }}
-            - name: POSTGRES_PASSWORD
-              value: {{ .Values.backend.env.POSTGRES_PASSWORD }}
-            - name: APP_HOST
-              value: {{ .Values.backend.env.APP_HOST }}
-            - name: APP_PORT
-              value: "{{ .Values.backend.env.APP_PORT }}"
-            - name: JWT_KEY
-              value: {{ .Values.backend.env.JWT_KEY }}
+          {{- range $key, $value := .Values.backend.env }}
+          - name: {{ $key }}
+            value: {{ $value | quote }}
+          {{- end }}
+
 
           {{- if .Values.backend.probes.liveness.enabled }}
           livenessProbe:

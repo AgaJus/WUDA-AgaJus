@@ -24,6 +24,10 @@ spec:
         component: frontend
 
     spec:
+      {{- if .Values.frontend.initContainers }}
+      initContainers:
+        {{- toYaml .Values.frontend.initContainers | nindent 8 }}
+      {{- end }}
       containers:
         - name: frontend
           image: {{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}
@@ -33,16 +37,10 @@ spec:
             - containerPort: {{ .Values.frontend.containerPort }}
 
           env:
-            - name: BACKEND_HOSTNAME
-              value: {{ .Values.frontend.env.BACKEND_HOSTNAME }}
-            - name: BACKEND_PORT
-              value: "{{ .Values.frontend.env.BACKEND_PORT }}"
-            - name: SECRET_KEY
-              value: {{ .Values.frontend.env.SECRET_KEY }}
-            - name: APP_HOST
-              value: {{ .Values.frontend.env.APP_HOST }}
-            - name: APP_PORT
-              value: "{{ .Values.frontend.env.APP_PORT }}"
+          {{- range $key, $value := .Values.frontend.env }}
+          - name: {{ $key }}
+            value: {{ $value | quote }}
+          {{- end }}
 
           {{- if .Values.frontend.probes.liveness.enabled }}
           livenessProbe:

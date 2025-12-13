@@ -21,27 +21,56 @@ frontend:
     nodePort: 30080 # frontend-service.yaml – port NodePort widoczny z zewnątrz
 
   env: # frontend-deployment.yaml – zmienne środowiskowe kontenera
-    BACKEND_HOSTNAME: wuda-wuda-app-backend # nazwa serwisu backendu
+    BACKEND_HOSTNAME: wuda-test-wuda-app-backend
     BACKEND_PORT: "8080" # port backendu
     SECRET_KEY: dev-secret # klucz aplikacyjny
     APP_HOST: "0.0.0.0" # host aplikacji
     APP_PORT: "8000" # port aplikacji
+    FLASK_DEBUG: "1"
+    PYTHONUNBUFFERED: "1"
 
   probes: # frontend-deployment.yaml – health checks
     liveness:
-      enabled: true
-      path: "/" # frontend-deployment.yaml – endpoint readiness
+      enabled: false
+      path: "/" # frontend-deployment.yaml – endpoint liveness
       initialDelay: 60 # frontend-deployment.yaml – opóźnienie startu
       periodSeconds: 10
       timeoutSeconds: 5
       failureThreshold: 5
+
     readiness:
-      enabled: true
+      enabled: false
       path: "/" # frontend-deployment.yaml – endpoint readiness
-      initialDelay: 120 # frontend-deployment.yaml – opóźnienie startu
+      initialDelay: 60 # frontend-deployment.yaml – opóźnienie startu
       periodSeconds: 10
       timeoutSeconds: 3
       failureThreshold: 10
+
+  initContainers:
+    - name: wait-for-backend-r
+      image: busybox:1.36
+      command:
+        - sh
+        - -c
+        - |
+          echo "Waiting for backend readiness..."
+          until wget -qO- http://wuda-test-wuda-app-backend:8080/readiness; do
+            sleep 3
+          done
+          echo "Backend readiness is up"
+
+    #- name: wait-for-backend-l
+    #  image: busybox:1.36
+    #  command:
+    #    - sh
+    #    - -c
+    #    - |
+    #      echo "Waiting for backend liveness..."
+    #      until wget -qO- http://wuda-test-wuda-app-backend:8080/liveness; do
+    #        sleep 3
+    #      done
+    #      echo "Backend liveness is up"
+    #
 
 backend:
   enabled: true # backend-deployment.yaml / backend-service.yaml – czy backend ma być tworzony
@@ -60,7 +89,7 @@ backend:
     port: 8080 # backend-service.yaml – port serwisu
 
   env: # backend-deployment.yaml – zmienne środowiskowe
-    POSTGRES_HOST: wuda-wuda-app-postgres # adres serwisu Postgresa
+    POSTGRES_HOST: wuda-test-wuda-app-postgres # POPRAWIONE: Teraz używa poprawnej nazwy Serwisu Kubernetes
     POSTGRES_PORT: "5432" # port Postgresa
     POSTGRES_DB: games # nazwa bazy
     POSTGRES_USER: board_games # użytkownik bazy
@@ -71,7 +100,7 @@ backend:
 
   probes:
     startup:
-      enabled: falce
+      enabled: false
       path: "/"
       initialDelay: 10
       periodSeconds: 10
@@ -79,19 +108,39 @@ backend:
 
     liveness:
       enabled: true
-      path: "/"
-      initialDelay: 60
-      periodSeconds: 10
+      path: "/liveness"
+      initialDelay: 5
+      periodSeconds: 5
       timeoutSeconds: 5
       failureThreshold: 10
 
     readiness:
-      enabled: true
-      path: "/"
-      initialDelay: 90
+      enabled: false
+      path: "/readiness"
+      initialDelay: 30
       periodSeconds: 10
       timeoutSeconds: 10
       failureThreshold: 10
+  initContainers:
+    - name: wait-for-postgres
+      image: busybox:1.36
+      command:
+        - sh
+        - -c
+        - |
+          echo "Waiting for Postgres network availability..."
+          MAX_ATTEMPTS=20
+          ATTEMPT=0
+          until nc -z wuda-test-wuda-app-postgres 5432; do
+            ATTEMPT=$((ATTEMPT+1))
+            if [ $ATTEMPT -ge $MAX_ATTEMPTS ]; then
+              echo "Timeout: Failed to connect to Postgres after 100 seconds."
+              exit 1 # Błąd inicjalizacji, restart Poda
+            fi
+            echo "Attempt $ATTEMPT/$MAX_ATTEMPTS. Waiting 5 seconds..."
+            sleep 5
+          done
+          echo "Postgres is ready on the network layer."
 
 postgres:
   enabled: true # postgres-deployment.yaml / postgres-service.yaml – czy DB ma być tworzona
@@ -99,6 +148,7 @@ postgres:
   image:
     repository: postgres # postgres-deployment.yaml – obraz Postgresa
     tag: "15" # postgres-deployment.yaml – wersja Postgresa
+    pullPolicy: IfNotPresent # DODANE: Polityka pobierania obrazu (standard)
 
   replicas: 1 # postgres-deployment.yaml – liczba replik (zwykle 1)
 
@@ -114,3 +164,19 @@ postgres:
   persistence:
     enabled: false # postgres-deployment.yaml – czy używać trwałego wolumenu
     mountPath: /var/lib/postgresql/data # postgres-deployment.yaml – ścieżka danych
+
+  # DODANE: Health Checks (Probes) dla Postgresa
+  probes:
+    # Liveness Probe (Sprawdza, czy kontener żyje)
+    liveness:
+      initialDelaySeconds: 30 # Po ilu sekundach po starcie zacząć sprawdzać
+      periodSeconds: 10 # Co ile sekund sprawdzać
+      timeoutSeconds: 5 # Czas oczekiwania na odpowiedź
+      failureThreshold: 3 # Ile razy musi się nie udać, zanim Pod zostanie zrestartowany
+    # Readiness Probe (Sprawdza, czy kontener jest gotowy na ruch)
+
+    readiness:
+      initialDelaySeconds: 5 # Postgres startuje szybko, ale potrzebuje chwili na DB
+      periodSeconds: 5
+      timeoutSeconds: 3
+      failureThreshold: 3
