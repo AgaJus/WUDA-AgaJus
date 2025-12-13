@@ -1,18 +1,116 @@
-# Values file - będzie wypełniony przez inną osobę
-# To jest tylko struktura podstawowa
+nameOverride: "" # _helpers.tpl – pozwala nadpisać nazwę aplikacji
+fullnameOverride: "" # _helpers.tpl – pozwala ustawić pełną nazwę zasobów
 
-postgres:
-  image: postgres:15 
-  database: games
-  user: board_games
-  password: alamakota
-
-backend:
-  image: backend:latest
-  port: 8080
+namespace: default # wszystkie templates – namespace, do którego trafią zasoby
 
 frontend:
-  image: frontend:latest
-  port: 8000
-  nodePort: 30080  # Port NodePort dla dostępu z przeglądarki
+  enabled: true # frontend-deployment.yaml / frontend-service.yaml – czy frontend ma być tworzony
 
+  image:
+    repository: frontend # frontend-deployment.yaml – nazwa obrazu Dockera
+    tag: latest # frontend-deployment.yaml – tag obrazu
+    pullPolicy: Never # frontend-deployment.yaml – polityka pobierania obrazu
+
+  replicas: 1 # frontend-deployment.yaml – liczba replik Deploymentu
+
+  containerPort: 8000 # frontend-deployment.yaml – port, na którym słucha aplikacja w kontenerze
+
+  service:
+    type: NodePort # frontend-service.yaml – typ serwisu (NodePort / ClusterIP)
+    port: 8000 # frontend-service.yaml – port serwisu
+    nodePort: 30080 # frontend-service.yaml – port NodePort widoczny z zewnątrz
+
+  env: # frontend-deployment.yaml – zmienne środowiskowe kontenera
+    BACKEND_HOSTNAME: wuda-wuda-app-backend # nazwa serwisu backendu
+    BACKEND_PORT: "8080" # port backendu
+    SECRET_KEY: dev-secret # klucz aplikacyjny
+    APP_HOST: "0.0.0.0" # host aplikacji
+    APP_PORT: "8000" # port aplikacji
+
+  probes: # frontend-deployment.yaml – health checks
+    liveness:
+      enabled: true
+      path: "/" # frontend-deployment.yaml – endpoint readiness
+      initialDelay: 60 # frontend-deployment.yaml – opóźnienie startu
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 5
+    readiness:
+      enabled: true
+      path: "/" # frontend-deployment.yaml – endpoint readiness
+      initialDelay: 120 # frontend-deployment.yaml – opóźnienie startu
+      periodSeconds: 10
+      timeoutSeconds: 3
+      failureThreshold: 10
+
+backend:
+  enabled: true # backend-deployment.yaml / backend-service.yaml – czy backend ma być tworzony
+
+  image:
+    repository: backend # backend-deployment.yaml – nazwa obrazu Dockera
+    tag: latest # backend-deployment.yaml – tag obrazu
+    pullPolicy: Never # backend-deployment.yaml – polityka pobierania obrazu
+
+  replicas: 1 # backend-deployment.yaml – liczba replik
+
+  containerPort: 8080 # backend-deployment.yaml – port aplikacji backendowej
+
+  service:
+    type: ClusterIP # backend-service.yaml – typ serwisu backendu
+    port: 8080 # backend-service.yaml – port serwisu
+
+  env: # backend-deployment.yaml – zmienne środowiskowe
+    POSTGRES_HOST: wuda-wuda-app-postgres # adres serwisu Postgresa
+    POSTGRES_PORT: "5432" # port Postgresa
+    POSTGRES_DB: games # nazwa bazy
+    POSTGRES_USER: board_games # użytkownik bazy
+    POSTGRES_PASSWORD: alamakota # hasło do bazy
+    APP_HOST: "0.0.0.0" # host aplikacji
+    APP_PORT: "8080" # port aplikacji
+    JWT_KEY: dev-secret # klucz JWT
+
+  probes:
+    startup:
+      enabled: falce
+      path: "/"
+      initialDelay: 10
+      periodSeconds: 10
+      failureThreshold: 30
+
+    liveness:
+      enabled: true
+      path: "/"
+      initialDelay: 60
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 10
+
+    readiness:
+      enabled: true
+      path: "/"
+      initialDelay: 90
+      periodSeconds: 10
+      timeoutSeconds: 10
+      failureThreshold: 10
+
+postgres:
+  enabled: true # postgres-deployment.yaml / postgres-service.yaml – czy DB ma być tworzona
+
+  image:
+    repository: postgres # postgres-deployment.yaml – obraz Postgresa
+    tag: "15" # postgres-deployment.yaml – wersja Postgresa
+
+  replicas: 1 # postgres-deployment.yaml – liczba replik (zwykle 1)
+
+  service:
+    type: ClusterIP # postgres-service.yaml – typ serwisu
+    port: 5432 # postgres-service.yaml – port serwisu DB
+
+  env: # postgres-deployment.yaml – zmienne DB
+    POSTGRES_DB: games
+    POSTGRES_USER: board_games
+    POSTGRES_PASSWORD: alamakota
+
+  persistence:
+    enabled: false # postgres-deployment.yaml – czy używać trwałego wolumenu
+    mountPath: /var/lib/postgresql/data # postgres-deployment.yaml – ścieżka danych

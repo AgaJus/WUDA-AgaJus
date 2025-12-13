@@ -2,60 +2,82 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "wuda-app.fullname" . }}-backend
-  namespace: {{ .Values.namespace | default "default" }}
+  namespace: {{ .Values.namespace }}
   labels:
-    {{- include "wuda-app.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "wuda-app.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
     component: backend
+
 spec:
-  replicas: 1
+  replicas: {{ .Values.backend.replicas }}
   selector:
     matchLabels:
-      {{- include "wuda-app.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/name: {{ include "wuda-app.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
       component: backend
+
   template:
     metadata:
       labels:
-        {{- include "wuda-app.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/name: {{ include "wuda-app.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
         component: backend
+
     spec:
       containers:
-      - name: backend
-        image: {{ .Values.backend.image | default "backend:latest" }}
-        imagePullPolicy: Never
-        ports:
-        - containerPort: {{ .Values.backend.port | default 8080 }}
-        env:
-        - name: POSTGRES_HOST
-          value: {{ include "wuda-app.fullname" . }}-postgres
-        - name: POSTGRES_PORT
-          value: "5432"
-        - name: POSTGRES_DB
-          value: {{ .Values.postgres.database | default "games" }}
-        - name: POSTGRES_USER
-          value: {{ .Values.postgres.user | default "board_games" }}
-        - name: POSTGRES_PASSWORD
-          value: {{ .Values.postgres.password | default "alamakota" }}
-        - name: APP_HOST
-          value: "0.0.0.0"
-        - name: APP_PORT
-          value: {{ .Values.backend.port | default "8080" | quote }}
-        - name: JWT_KEY
-          value: {{ .Values.backend.jwtKey | default "dev-secret" }}
-        livenessProbe:
-          httpGet:
-            path: /liveness
-            port: {{ .Values.backend.port | default 8080 }}
-          initialDelaySeconds: 60
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 5
-        readinessProbe:
-          httpGet:
-            path: /readiness
-            port: {{ .Values.backend.port | default 8080 }}
-          initialDelaySeconds: 30
-          periodSeconds: 5
-          timeoutSeconds: 10
-          failureThreshold: 5
+        - name: backend
+          image: {{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
 
+          ports:
+            - containerPort: {{ .Values.backend.containerPort }}
 
+          env:
+            - name: POSTGRES_HOST
+              value: {{ .Values.backend.env.POSTGRES_HOST }}
+            - name: POSTGRES_PORT
+              value: "{{ .Values.backend.env.POSTGRES_PORT }}"
+            - name: POSTGRES_DB
+              value: {{ .Values.backend.env.POSTGRES_DB }}
+            - name: POSTGRES_USER
+              value: {{ .Values.backend.env.POSTGRES_USER }}
+            - name: POSTGRES_PASSWORD
+              value: {{ .Values.backend.env.POSTGRES_PASSWORD }}
+            - name: APP_HOST
+              value: {{ .Values.backend.env.APP_HOST }}
+            - name: APP_PORT
+              value: "{{ .Values.backend.env.APP_PORT }}"
+            - name: JWT_KEY
+              value: {{ .Values.backend.env.JWT_KEY }}
+
+          {{- if .Values.backend.probes.liveness.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.backend.probes.liveness.path }}
+              port: {{ .Values.backend.containerPort }}
+            initialDelaySeconds: {{ .Values.backend.probes.liveness.initialDelay }}
+            periodSeconds: {{ .Values.backend.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.backend.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.backend.probes.liveness.failureThreshold }}
+          {{- end }}
+
+          {{- if .Values.backend.probes.readiness.enabled }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.backend.probes.readiness.path }}
+              port: {{ .Values.backend.containerPort }}
+            initialDelaySeconds: {{ .Values.backend.probes.readiness.initialDelay }}
+            periodSeconds: {{ .Values.backend.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.backend.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.backend.probes.readiness.failureThreshold }}
+          {{- end }}
+
+          {{- if .Values.backend.probes.startup.enabled }}
+          startupProbe:
+            httpGet:
+              path: {{ .Values.backend.probes.startup.path }}
+              port: 8080
+            initialDelaySeconds: {{ .Values.backend.probes.startup.initialDelay }}
+            periodSeconds: {{ .Values.backend.probes.startup.periodSeconds }}
+            failureThreshold: {{ .Values.backend.probes.startup.failureThreshold }}
+          {{- end }}

@@ -2,59 +2,69 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "wuda-app.fullname" . }}-postgres
-  namespace: {{ .Values.namespace | default "default" }}
+  namespace: {{ .Values.namespace }}
   labels:
-    {{- include "wuda-app.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "wuda-app.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
     component: postgres
+
 spec:
-  replicas: 1
+  replicas: {{ .Values.postgres.replicas }}
   selector:
     matchLabels:
-      {{- include "wuda-app.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/name: {{ include "wuda-app.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
       component: postgres
+
   template:
     metadata:
       labels:
-        {{- include "wuda-app.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/name: {{ include "wuda-app.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
         component: postgres
+
     spec:
       containers:
-      - name: postgres
-        image: {{ .Values.postgres.image | default "postgres:15" }}
-        ports:
-        - containerPort: 5432
-        env:
-        - name: POSTGRES_DB
-          value: {{ .Values.postgres.database | default "games" }}
-        - name: POSTGRES_USER
-          value: {{ .Values.postgres.user | default "board_games" }}
-        - name: POSTGRES_PASSWORD
-          value: {{ .Values.postgres.password | default "alamakota" }}
-        volumeMounts:
-        - name: postgres-storage
-          mountPath: /var/lib/postgresql/data
-        livenessProbe:
-          exec:
-            command:
-            - /bin/sh
-            - -c
-            - pg_isready -U $(POSTGRES_USER) -d $(POSTGRES_DB)
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 3
-        readinessProbe:
-          exec:
-            command:
-            - /bin/sh
-            - -c
-            - pg_isready -U $(POSTGRES_USER) -d $(POSTGRES_DB)
-          initialDelaySeconds: 5
-          periodSeconds: 5
-          timeoutSeconds: 3
-          failureThreshold: 3
+        - name: postgres
+          image: {{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag }}
+
+          ports:
+            - containerPort: {{ .Values.postgres.service.port }}
+
+          env:
+            - name: POSTGRES_DB
+              value: {{ .Values.postgres.env.POSTGRES_DB }}
+            - name: POSTGRES_USER
+              value: {{ .Values.postgres.env.POSTGRES_USER }}
+            - name: POSTGRES_PASSWORD
+              value: {{ .Values.postgres.env.POSTGRES_PASSWORD }}
+
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: {{ .Values.postgres.persistence.mountPath }}
+
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - pg_isready -U $(POSTGRES_USER) -d $(POSTGRES_DB)
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - pg_isready -U $(POSTGRES_USER) -d $(POSTGRES_DB)
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+
       volumes:
-      - name: postgres-storage
-        emptyDir: {}
-
-
+        - name: postgres-storage
+          emptyDir: {}
