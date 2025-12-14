@@ -36,6 +36,10 @@ spec:
           ports:
             - containerPort: {{ .Values.frontend.containerPort }}
 
+          {{- if .Values.frontend.resources }}
+          resources: {{- toYaml .Values.frontend.resources | nindent 12 }}
+          {{- end }}
+
           env:
           {{- range $key, $value := .Values.frontend.env }}
           - name: {{ $key }}

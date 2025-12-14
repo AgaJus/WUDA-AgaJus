@@ -58,19 +58,13 @@ frontend:
             sleep 3
           done
           echo "Backend readiness is up"
-
-    #- name: wait-for-backend-l
-    #  image: busybox:1.36
-    #  command:
-    #    - sh
-    #    - -c
-    #    - |
-    #      echo "Waiting for backend liveness..."
-    #      until wget -qO- http://wuda-test-wuda-app-backend:8080/liveness; do
-    #        sleep 3
-    #      done
-    #      echo "Backend liveness is up"
-    #
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+    limits:
+      cpu: "200m"
+      memory: "128Mi"
 
 backend:
   enabled: true # backend-deployment.yaml / backend-service.yaml – czy backend ma być tworzony
@@ -141,6 +135,13 @@ backend:
             sleep 5
           done
           echo "Postgres is ready on the network layer."
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "256Mi"
 
 postgres:
   enabled: true # postgres-deployment.yaml / postgres-service.yaml – czy DB ma być tworzona
@@ -180,3 +181,21 @@ postgres:
       periodSeconds: 5
       timeoutSeconds: 3
       failureThreshold: 3
+
+kube-prometheus-stack:
+  grafana:
+    enabled: true
+
+    service:
+      type: NodePort
+      nodePort: 32000
+
+    dashboards:
+      wuda:
+        wuda-pods:
+          file: dashboards/wuda-pods.json
+
+  prometheus:
+    service:
+      type: NodePort
+      nodePort: 32001
