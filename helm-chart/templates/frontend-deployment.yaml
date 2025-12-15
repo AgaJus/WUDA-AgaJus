@@ -1,3 +1,4 @@
+{{- if .Values.frontend.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -67,3 +68,4 @@ spec:
             timeoutSeconds: {{ .Values.frontend.probes.readiness.timeoutSeconds }}
             failureThreshold: {{ .Values.frontend.probes.readiness.failureThreshold }}
           {{- end }}
+{{- end }}

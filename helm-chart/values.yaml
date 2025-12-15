@@ -82,15 +82,12 @@ backend:
     type: ClusterIP # backend-service.yaml – typ serwisu backendu
     port: 8080 # backend-service.yaml – port serwisu
 
-  env: # backend-deployment.yaml – zmienne środowiskowe
-    POSTGRES_HOST: wuda-test-wuda-app-postgres # POPRAWIONE: Teraz używa poprawnej nazwy Serwisu Kubernetes
-    POSTGRES_PORT: "5432" # port Postgresa
-    POSTGRES_DB: games # nazwa bazy
-    POSTGRES_USER: board_games # użytkownik bazy
-    POSTGRES_PASSWORD: alamakota # hasło do bazy
-    APP_HOST: "0.0.0.0" # host aplikacji
-    APP_PORT: "8080" # port aplikacji
-    JWT_KEY: dev-secret # klucz JWT
+  env:
+    POSTGRES_HOST: wuda-test-wuda-app-postgres
+    POSTGRES_PORT: "5432"
+    POSTGRES_DB: games
+    APP_HOST: "0.0.0.0"
+    APP_PORT: "8080"
 
   probes:
     startup:
@@ -109,7 +106,7 @@ backend:
       failureThreshold: 10
 
     readiness:
-      enabled: false
+      enabled: true
       path: "/readiness"
       initialDelay: 30
       periodSeconds: 10
@@ -174,8 +171,8 @@ postgres:
       periodSeconds: 10 # Co ile sekund sprawdzać
       timeoutSeconds: 5 # Czas oczekiwania na odpowiedź
       failureThreshold: 3 # Ile razy musi się nie udać, zanim Pod zostanie zrestartowany
-    # Readiness Probe (Sprawdza, czy kontener jest gotowy na ruch)
 
+    # Readiness Probe (Sprawdza, czy kontener jest gotowy na ruch)
     readiness:
       initialDelaySeconds: 5 # Postgres startuje szybko, ale potrzebuje chwili na DB
       periodSeconds: 5
@@ -196,6 +193,7 @@ kube-prometheus-stack:
           file: dashboards/wuda-pods.json
 
   prometheus:
+    enabled: true
     service:
       type: NodePort
       nodePort: 32001
